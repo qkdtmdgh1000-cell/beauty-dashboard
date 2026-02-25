@@ -304,7 +304,7 @@ with tab1:
             fig_cat.update_layout(
                 height=480,
                 showlegend=False,
-                margin=dict(l=10, r=10, t=40, b=10),
+                margin=dict(l=90, r=90, t=50, b=50),
             )
             st.plotly_chart(fig_cat, use_container_width=True)
         else:
