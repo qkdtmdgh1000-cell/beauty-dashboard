@@ -327,10 +327,10 @@ with tab1:
             textposition="outside",
         )
         fig_yt.update_layout(
-            height=420,
+            height=460,
             coloraxis_showscale=False,
             xaxis_tickangle=-35,
-            margin=dict(l=10, r=10, t=60, b=80),
+            margin=dict(l=10, r=10, t=90, b=80),
         )
         st.plotly_chart(fig_yt, use_container_width=True)
 
