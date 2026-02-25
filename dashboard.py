@@ -67,7 +67,36 @@ st.markdown("""
     .sentiment-positive { color: #2E7D32; font-weight: 600; }
     .sentiment-negative { color: #C62828; font-weight: 600; }
     .sentiment-neutral  { color: #F57F17; font-weight: 600; }
-    div[data-testid="stSidebarContent"] { background-color: #FFF0F5; }
+
+    /* Sidebar background */
+    div[data-testid="stSidebarContent"] {
+        background-color: #fff8fa;
+    }
+    /* Sidebar all text → dark gray */
+    div[data-testid="stSidebarContent"] label,
+    div[data-testid="stSidebarContent"] p,
+    div[data-testid="stSidebarContent"] span,
+    div[data-testid="stSidebarContent"] div {
+        color: #333 !important;
+    }
+    /* Sidebar headings */
+    div[data-testid="stSidebarContent"] h2,
+    div[data-testid="stSidebarContent"] h3 {
+        color: #AD1457 !important;
+    }
+    /* Multiselect tags: softer pink */
+    div[data-testid="stSidebarContent"] span[data-baseweb="tag"] {
+        background-color: #F8BBD9 !important;
+        color: #880E4F !important;
+    }
+    div[data-testid="stSidebarContent"] span[data-baseweb="tag"] span {
+        color: #880E4F !important;
+    }
+    /* Expander label */
+    div[data-testid="stSidebarContent"] details summary p {
+        color: #555 !important;
+        font-weight: 500;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -113,19 +142,23 @@ with st.sidebar:
     st.markdown("## 💄 Filters")
     st.markdown("---")
 
-    selected_youtubers = st.multiselect(
-        "👤 YouTubers",
-        options=all_youtubers,
-        default=all_youtubers,
-        help="Select one or more YouTubers to filter all charts",
-    )
+    with st.expander("👤 YouTubers", expanded=False):
+        selected_youtubers = st.multiselect(
+            "Select YouTubers to include",
+            options=all_youtubers,
+            default=all_youtubers,
+            help="Leave empty to include all",
+            label_visibility="collapsed",
+        )
 
     st.markdown("---")
-    selected_sentiments = st.multiselect(
-        "😊 Sentiment",
-        options=["positive", "neutral", "negative"],
-        default=["positive", "neutral", "negative"],
-    )
+    with st.expander("😊 Sentiment", expanded=False):
+        selected_sentiments = st.multiselect(
+            "Select sentiment labels",
+            options=["positive", "neutral", "negative"],
+            default=["positive", "neutral", "negative"],
+            label_visibility="collapsed",
+        )
 
     st.markdown("---")
     top_n_brands = st.slider("🏷️ Top N Brands to show", 5, 25, 15)
