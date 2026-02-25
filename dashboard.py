@@ -136,6 +136,8 @@ all_brands    = sorted(dfs["brands"]["brand"].unique().tolist())
 # 세션 상태 초기화
 if "youtuber_multiselect" not in st.session_state:
     st.session_state["youtuber_multiselect"] = all_youtubers
+if "sentiment_multiselect" not in st.session_state:
+    st.session_state["sentiment_multiselect"] = ["positive", "neutral", "negative"]
 
 # ──────────────────────────────────────────────
 # 사이드바 필터
@@ -163,10 +165,18 @@ with st.sidebar:
 
     st.markdown("---")
     with st.expander("😊 감성", expanded=False):
+        snt_col1, snt_col2 = st.columns(2)
+        with snt_col1:
+            if st.button("전체 선택", use_container_width=True, key="btn_sent_all"):
+                st.session_state["sentiment_multiselect"] = ["positive", "neutral", "negative"]
+        with snt_col2:
+            if st.button("전체 해제", use_container_width=True, key="btn_sent_none"):
+                st.session_state["sentiment_multiselect"] = []
+
         selected_sentiments = st.multiselect(
             "감성 필터",
             options=["positive", "neutral", "negative"],
-            default=["positive", "neutral", "negative"],
+            key="sentiment_multiselect",
             format_func=lambda x: SENTIMENT_KO[x],
             label_visibility="collapsed",
         )
