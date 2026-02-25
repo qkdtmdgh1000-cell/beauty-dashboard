@@ -1,8 +1,5 @@
 """
-Beauty Influencer Cosmetics Analytics Dashboard
-================================================
-Interactive Streamlit dashboard for analyzing cosmetic brand mentions,
-sentiment, and trends across top YouTube beauty influencers.
+뷰티 인플루언서 화장품 분석 대시보드
 """
 
 import json
@@ -15,17 +12,17 @@ from plotly.subplots import make_subplots
 import streamlit as st
 
 # ──────────────────────────────────────────────
-# Page configuration
+# 페이지 설정
 # ──────────────────────────────────────────────
 st.set_page_config(
-    page_title="Beauty Influencer Analytics",
+    page_title="뷰티 인플루언서 분석",
     page_icon="💄",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ──────────────────────────────────────────────
-# Custom CSS
+# 스타일
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -41,21 +38,6 @@ st.markdown("""
         margin-top: 0;
         margin-bottom: 1.5rem;
     }
-    .metric-card {
-        background: linear-gradient(135deg, #FCE4EC, #F8BBD9);
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        text-align: center;
-    }
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #880E4F;
-    }
-    .metric-label {
-        font-size: 0.85rem;
-        color: #555;
-    }
     .section-header {
         font-size: 1.3rem;
         font-weight: 600;
@@ -68,23 +50,22 @@ st.markdown("""
     .sentiment-negative { color: #C62828; font-weight: 600; }
     .sentiment-neutral  { color: #F57F17; font-weight: 600; }
 
-    /* Sidebar background */
+    /* 사이드바 배경 */
     div[data-testid="stSidebarContent"] {
         background-color: #fff8fa;
     }
-    /* Sidebar all text → dark gray */
+    /* 사이드바 텍스트 */
     div[data-testid="stSidebarContent"] label,
     div[data-testid="stSidebarContent"] p,
     div[data-testid="stSidebarContent"] span,
     div[data-testid="stSidebarContent"] div {
         color: #333 !important;
     }
-    /* Sidebar headings */
     div[data-testid="stSidebarContent"] h2,
     div[data-testid="stSidebarContent"] h3 {
         color: #AD1457 !important;
     }
-    /* Multiselect tags: softer pink */
+    /* 멀티셀렉트 태그 */
     div[data-testid="stSidebarContent"] span[data-baseweb="tag"] {
         background-color: #F8BBD9 !important;
         color: #880E4F !important;
@@ -92,7 +73,7 @@ st.markdown("""
     div[data-testid="stSidebarContent"] span[data-baseweb="tag"] span {
         color: #880E4F !important;
     }
-    /* Expander label */
+    /* 익스팬더 */
     div[data-testid="stSidebarContent"] details summary p {
         color: #555 !important;
         font-weight: 500;
@@ -101,7 +82,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────
-# Data loading
+# 데이터 로딩
 # ──────────────────────────────────────────────
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -109,6 +90,12 @@ SENTIMENT_COLORS = {
     "positive": "#4CAF50",
     "neutral":  "#FFC107",
     "negative": "#F44336",
+}
+
+SENTIMENT_KO = {
+    "positive": "긍정",
+    "neutral":  "중립",
+    "negative": "부정",
 }
 
 
@@ -136,46 +123,47 @@ all_youtubers = sorted(dfs["brands"]["youtuber"].unique().tolist())
 all_brands    = sorted(dfs["brands"]["brand"].unique().tolist())
 
 # ──────────────────────────────────────────────
-# Sidebar filters
+# 사이드바 필터
 # ──────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 💄 Filters")
+    st.markdown("## 💄 필터")
     st.markdown("---")
 
-    with st.expander("👤 YouTubers", expanded=False):
+    with st.expander("👤 유튜버", expanded=False):
         selected_youtubers = st.multiselect(
-            "Select YouTubers to include",
+            "포함할 유튜버 선택",
             options=all_youtubers,
             default=all_youtubers,
-            help="Leave empty to include all",
+            help="비워두면 전체 포함",
             label_visibility="collapsed",
         )
 
     st.markdown("---")
-    with st.expander("😊 Sentiment", expanded=False):
+    with st.expander("😊 감성", expanded=False):
         selected_sentiments = st.multiselect(
-            "Select sentiment labels",
+            "감성 필터",
             options=["positive", "neutral", "negative"],
             default=["positive", "neutral", "negative"],
+            format_func=lambda x: SENTIMENT_KO[x],
             label_visibility="collapsed",
         )
 
     st.markdown("---")
-    top_n_brands = st.slider("🏷️ Top N Brands to show", 5, 25, 15)
+    top_n_brands = st.slider("🏷️ 상위 브랜드 수", 5, 25, 15)
 
     st.markdown("---")
-    st.markdown("### 📂 About")
+    st.markdown("### 📂 소개")
     st.markdown("""
-This dashboard analyzes cosmetic brand mentions and sentiment across
-**top YouTube beauty influencers**.
+주요 뷰티 유튜버들의 영상에서 화장품 브랜드 언급과
+감성 반응을 분석한 대시보드입니다.
 
-**Data**: 20 YouTubers · 200 videos · 375 brand mentions
+**데이터**: 유튜버 20명 · 영상 200개 · 브랜드 언급 375건
 
-**Sentiment method**: TextBlob NLP + beauty keyword matching
+**감성 분석**: TextBlob NLP + 뷰티 키워드 매칭
 """)
 
 # ──────────────────────────────────────────────
-# Apply filters to DataFrames
+# 필터 적용
 # ──────────────────────────────────────────────
 if not selected_youtubers:
     selected_youtubers = all_youtubers
@@ -190,51 +178,50 @@ df_sentiments  = dfs["sentiments"][
 df_youtubers   = dfs["youtubers"][dfs["youtubers"]["youtuber"].isin(selected_youtubers)]
 
 # ──────────────────────────────────────────────
-# Header
+# 헤더
 # ──────────────────────────────────────────────
-st.markdown('<p class="main-title">💄 Beauty Influencer Cosmetics Analytics</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Brand mentions, sentiment analysis & ingredient trends across top YouTube beauty channels</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">💄 뷰티 인플루언서 화장품 분석</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">유튜브 뷰티 채널의 브랜드 언급 · 감성 분석 · 성분 트렌드를 한눈에</p>', unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────
-# KPI Cards
+# 주요 지표
 # ──────────────────────────────────────────────
-total_yt    = len(df_youtubers)
-total_vid   = int(df_youtubers["videos_analyzed"].sum()) if not df_youtubers.empty else 0
-total_brd   = df_brands["brand"].nunique() if not df_brands.empty else 0
-total_sent  = len(df_sentiments)
+total_yt   = len(df_youtubers)
+total_vid  = int(df_youtubers["videos_analyzed"].sum()) if not df_youtubers.empty else 0
+total_brd  = df_brands["brand"].nunique() if not df_brands.empty else 0
+total_sent = len(df_sentiments)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("👤 YouTubers", total_yt)
+    st.metric("👤 유튜버", total_yt)
 with col2:
-    st.metric("🎬 Videos Analyzed", total_vid)
+    st.metric("🎬 분석 영상", total_vid)
 with col3:
-    st.metric("🏷️ Unique Brands", total_brd)
+    st.metric("🏷️ 브랜드 수", total_brd)
 with col4:
-    st.metric("💬 Sentiment Data Points", total_sent)
+    st.metric("💬 감성 분석 건수", total_sent)
 
 st.divider()
 
 # ──────────────────────────────────────────────
-# Tabs
+# 탭
 # ──────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Overview",
-    "🏷️ Brand Deep Dive",
-    "🧪 Ingredients",
-    "👤 YouTuber Profiles",
+    "📊 전체 현황",
+    "🏷️ 브랜드 분석",
+    "🧪 성분 분석",
+    "👤 유튜버 프로필",
 ])
 
 
 # ══════════════════════════════════════════════
-# TAB 1 — Overview
+# TAB 1 — 전체 현황
 # ══════════════════════════════════════════════
 with tab1:
     col_left, col_right = st.columns([3, 2])
 
-    # Top Brands bar chart
     with col_left:
-        st.markdown('<p class="section-header">🏆 Top Mentioned Brands</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">🏆 언급 상위 브랜드</p>', unsafe_allow_html=True)
         if not df_brands.empty:
             brand_totals = (
                 df_brands.groupby("brand")["count"]
@@ -249,8 +236,8 @@ with tab1:
                 orientation="h",
                 color="count",
                 color_continuous_scale="RdPu",
-                labels={"count": "Total Mentions", "brand": "Brand"},
-                title=f"Top {top_n_brands} Brands by Mention Count",
+                labels={"count": "총 언급 수", "brand": "브랜드"},
+                title=f"언급 수 기준 상위 {top_n_brands}개 브랜드",
             )
             fig_brands.update_layout(
                 height=480,
@@ -260,11 +247,10 @@ with tab1:
             )
             st.plotly_chart(fig_brands, use_container_width=True)
         else:
-            st.info("No brand data for selected filters.")
+            st.info("선택한 필터에 해당하는 브랜드 데이터가 없습니다.")
 
-    # Category distribution donut
     with col_right:
-        st.markdown('<p class="section-header">📂 Product Categories</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">📂 제품 카테고리</p>', unsafe_allow_html=True)
         if not df_categories.empty:
             cat_totals = (
                 df_categories.groupby("category")["count"]
@@ -279,7 +265,7 @@ with tab1:
                 values="count",
                 hole=0.45,
                 color_discrete_sequence=px.colors.qualitative.Pastel,
-                title="Category Distribution",
+                title="카테고리 분포",
             )
             fig_cat.update_traces(textposition="outside", textinfo="percent+label")
             fig_cat.update_layout(
@@ -289,10 +275,9 @@ with tab1:
             )
             st.plotly_chart(fig_cat, use_container_width=True)
         else:
-            st.info("No category data for selected filters.")
+            st.info("선택한 필터에 해당하는 카테고리 데이터가 없습니다.")
 
-    # YouTuber Subscribers bar
-    st.markdown('<p class="section-header">📈 YouTuber Channel Stats</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">📈 유튜버 채널 현황</p>', unsafe_allow_html=True)
     if not df_youtubers.empty:
         yt_sorted = df_youtubers.sort_values("subscribers", ascending=False)
         fig_yt = px.bar(
@@ -300,8 +285,8 @@ with tab1:
             x="youtuber", y="subscribers",
             color="subscribers",
             color_continuous_scale="Pinkyl",
-            labels={"subscribers": "Subscribers", "youtuber": ""},
-            title="Subscribers by YouTuber",
+            labels={"subscribers": "구독자 수", "youtuber": ""},
+            title="유튜버별 구독자 수",
             text="subscribers",
         )
         fig_yt.update_traces(
@@ -318,11 +303,10 @@ with tab1:
 
 
 # ══════════════════════════════════════════════
-# TAB 2 — Brand Deep Dive
+# TAB 2 — 브랜드 분석
 # ══════════════════════════════════════════════
 with tab2:
-    # Brand Sentiment
-    st.markdown('<p class="section-header">😊 Brand Sentiment Analysis</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">😊 브랜드 감성 분석</p>', unsafe_allow_html=True)
 
     if not df_sentiments.empty:
         brand_sent_avg = (
@@ -335,6 +319,7 @@ with tab2:
         brand_sent_avg["sentiment_label"] = brand_sent_avg["avg_score"].apply(
             lambda s: "positive" if s > 0.08 else "negative" if s < -0.08 else "neutral"
         )
+        brand_sent_avg["sentiment_ko"] = brand_sent_avg["sentiment_label"].map(SENTIMENT_KO)
         brand_sent_avg["color"] = brand_sent_avg["sentiment_label"].map(SENTIMENT_COLORS)
 
         fig_sent = go.Figure(go.Bar(
@@ -344,43 +329,42 @@ with tab2:
             marker_color=brand_sent_avg["color"],
             text=brand_sent_avg["avg_score"].round(2),
             textposition="outside",
-            customdata=brand_sent_avg[["mentions", "sentiment_label"]],
+            customdata=brand_sent_avg[["mentions", "sentiment_ko"]],
             hovertemplate=(
                 "<b>%{y}</b><br>"
-                "Avg Sentiment: %{x:.3f}<br>"
-                "Total Mentions: %{customdata[0]}<br>"
-                "Label: %{customdata[1]}<extra></extra>"
+                "평균 감성 점수: %{x:.3f}<br>"
+                "총 언급 수: %{customdata[0]}<br>"
+                "감성: %{customdata[1]}<extra></extra>"
             ),
         ))
         fig_sent.add_vline(x=0, line_dash="dash", line_color="gray", opacity=0.5)
         fig_sent.update_layout(
             height=max(400, len(brand_sent_avg) * 28),
-            title="Average Sentiment Score per Brand",
-            xaxis_title="Sentiment Score  (← Negative | Positive →)",
+            title="브랜드별 평균 감성 점수",
+            xaxis_title="감성 점수 (← 부정 | 긍정 →)",
             margin=dict(l=10, r=60, t=40, b=10),
         )
         st.plotly_chart(fig_sent, use_container_width=True)
 
-        # Sentiment distribution pie
         col_a, col_b = st.columns(2)
         with col_a:
-            st.markdown('<p class="section-header">📊 Sentiment Distribution</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-header">📊 감성 분포</p>', unsafe_allow_html=True)
             sent_counts = df_sentiments["label"].value_counts().reset_index()
             sent_counts.columns = ["label", "count"]
-            sent_counts["color"] = sent_counts["label"].map(SENTIMENT_COLORS)
+            sent_counts["label_ko"] = sent_counts["label"].map(SENTIMENT_KO)
             fig_sd = px.pie(
                 sent_counts,
-                names="label", values="count",
+                names="label_ko", values="count",
                 color="label",
                 color_discrete_map=SENTIMENT_COLORS,
                 hole=0.4,
-                title="Sentiment Breakdown",
+                title="감성 비율",
             )
             fig_sd.update_layout(height=320, margin=dict(t=40, b=10))
             st.plotly_chart(fig_sd, use_container_width=True)
 
         with col_b:
-            st.markdown('<p class="section-header">🏅 Top Positive Brands</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-header">🏅 긍정 반응 상위 브랜드</p>', unsafe_allow_html=True)
             top_pos = (
                 df_sentiments[df_sentiments["label"] == "positive"]
                 .groupby("brand")["avg_score"]
@@ -395,8 +379,8 @@ with tab2:
                     orientation="h",
                     color="avg_score",
                     color_continuous_scale=[[0, "#A5D6A7"], [1, "#1B5E20"]],
-                    labels={"avg_score": "Avg Sentiment", "brand": ""},
-                    title="Most Positively Received Brands",
+                    labels={"avg_score": "평균 감성 점수", "brand": ""},
+                    title="긍정 평가 상위 브랜드",
                 )
                 fig_pos.update_layout(
                     height=320,
@@ -406,12 +390,11 @@ with tab2:
                 )
                 st.plotly_chart(fig_pos, use_container_width=True)
             else:
-                st.info("No positive sentiment data.")
+                st.info("긍정 감성 데이터가 없습니다.")
     else:
-        st.info("No sentiment data for selected filters.")
+        st.info("선택한 필터에 해당하는 감성 데이터가 없습니다.")
 
-    # YouTuber × Brand Heatmap
-    st.markdown('<p class="section-header">🔥 YouTuber × Brand Heatmap</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">🔥 유튜버 × 브랜드 히트맵</p>', unsafe_allow_html=True)
     if not df_brands.empty:
         top_brands_list = (
             df_brands.groupby("brand")["count"].sum()
@@ -432,8 +415,8 @@ with tab2:
                 pivot,
                 color_continuous_scale="RdPu",
                 aspect="auto",
-                title="Brand Mentions Heatmap (Top 15 YouTubers × Top 15 Brands)",
-                labels=dict(x="Brand", y="YouTuber", color="Mentions"),
+                title="브랜드 언급 히트맵 (상위 15 유튜버 × 상위 15 브랜드)",
+                labels=dict(x="브랜드", y="유튜버", color="언급 수"),
             )
             fig_heat.update_xaxes(tickangle=-40)
             fig_heat.update_layout(
@@ -442,8 +425,7 @@ with tab2:
             )
             st.plotly_chart(fig_heat, use_container_width=True)
 
-    # Brand overlap — brands mentioned by N+ YouTubers
-    st.markdown('<p class="section-header">🤝 Cross-Influencer Brand Overlap</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">🤝 인플루언서 간 공통 브랜드</p>', unsafe_allow_html=True)
     if not df_brands.empty:
         overlap = (
             df_brands.groupby("brand")["youtuber"].nunique()
@@ -461,19 +443,18 @@ with tab2:
             marker_color=overlap["color"],
             text=overlap["youtuber_count"],
             textposition="outside",
-            hovertemplate="<b>%{x}</b><br>Mentioned by %{y} YouTubers<extra></extra>",
+            hovertemplate="<b>%{x}</b><br>%{y}명의 유튜버가 언급<extra></extra>",
         ))
         fig_overlap.update_layout(
             height=380,
-            title="Brands Mentioned by the Most YouTubers",
-            yaxis_title="Number of YouTubers",
+            title="가장 많은 유튜버가 언급한 브랜드",
+            yaxis_title="유튜버 수",
             xaxis_tickangle=-35,
             margin=dict(l=10, r=10, t=40, b=80),
         )
         st.plotly_chart(fig_overlap, use_container_width=True)
 
-    # Sortable data table
-    st.markdown('<p class="section-header">📋 Brand Data Table</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">📋 브랜드 데이터</p>', unsafe_allow_html=True)
     if not df_brands.empty and not df_sentiments.empty:
         brand_table = (
             df_brands.groupby("brand")["count"].sum()
@@ -492,19 +473,20 @@ with tab2:
         merged = brand_table.merge(sent_table, on="brand", how="left")
         merged = merged.merge(yt_count_table, on="brand", how="left")
         merged["avg_sentiment"] = merged["avg_sentiment"].round(3)
+        merged["dominant_label"] = merged["dominant_label"].map(SENTIMENT_KO).fillna("중립")
         merged = merged.sort_values("total_mentions", ascending=False)
-        merged.columns = ["Brand", "Total Mentions", "Avg Sentiment", "Label", "# YouTubers"]
+        merged.columns = ["브랜드", "총 언급 수", "평균 감성 점수", "감성", "유튜버 수"]
         st.dataframe(merged, use_container_width=True, hide_index=True)
 
 
 # ══════════════════════════════════════════════
-# TAB 3 — Ingredients
+# TAB 3 — 성분 분석
 # ══════════════════════════════════════════════
 with tab3:
     col_l, col_r = st.columns([3, 2])
 
     with col_l:
-        st.markdown('<p class="section-header">🔬 Ingredient Frequency</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">🔬 성분 언급 빈도</p>', unsafe_allow_html=True)
         if not df_ingredients.empty:
             ing_totals = (
                 df_ingredients.groupby("ingredient")["count"]
@@ -519,8 +501,8 @@ with tab3:
                 orientation="h",
                 color="count",
                 color_continuous_scale="YlOrRd",
-                labels={"count": "Total Mentions", "ingredient": "Ingredient"},
-                title="Most Discussed Skincare Ingredients",
+                labels={"count": "총 언급 수", "ingredient": "성분"},
+                title="가장 많이 언급된 스킨케어 성분",
                 text="count",
             )
             fig_ing.update_traces(textposition="outside")
@@ -532,10 +514,10 @@ with tab3:
             )
             st.plotly_chart(fig_ing, use_container_width=True)
         else:
-            st.info("No ingredient data for selected filters.")
+            st.info("선택한 필터에 해당하는 성분 데이터가 없습니다.")
 
     with col_r:
-        st.markdown('<p class="section-header">☁️ Ingredient Word Cloud</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">☁️ 성분 워드 클라우드</p>', unsafe_allow_html=True)
         if not df_ingredients.empty:
             try:
                 from wordcloud import WordCloud
@@ -560,12 +542,11 @@ with tab3:
                 buf.seek(0)
                 st.image(buf, use_container_width=True)
             except ImportError:
-                st.info("Install `wordcloud` to see this chart.")
+                st.info("`wordcloud` 패키지를 설치하면 워드 클라우드를 볼 수 있습니다.")
         else:
-            st.info("No ingredient data.")
+            st.info("성분 데이터가 없습니다.")
 
-    # Ingredient by YouTuber heatmap
-    st.markdown('<p class="section-header">👤 Ingredient Mentions by YouTuber</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">👤 유튜버별 성분 언급</p>', unsafe_allow_html=True)
     if not df_ingredients.empty:
         top_ings = (
             df_ingredients.groupby("ingredient")["count"]
@@ -581,7 +562,8 @@ with tab3:
                 ing_pivot,
                 color_continuous_scale="YlOrRd",
                 aspect="auto",
-                title="Ingredient Mentions by YouTuber",
+                title="유튜버별 성분 언급 현황",
+                labels=dict(x="성분", y="유튜버", color="언급 수"),
             )
             fig_ing_heat.update_xaxes(tickangle=-35)
             fig_ing_heat.update_layout(
@@ -592,18 +574,17 @@ with tab3:
 
 
 # ══════════════════════════════════════════════
-# TAB 4 — YouTuber Profiles
+# TAB 4 — 유튜버 프로필
 # ══════════════════════════════════════════════
 with tab4:
-    st.markdown('<p class="section-header">👤 Select a YouTuber</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">👤 유튜버 선택</p>', unsafe_allow_html=True)
 
     chosen_yt = st.selectbox(
-        "Choose YouTuber for detailed view",
+        "상세 분석할 유튜버를 선택하세요",
         options=selected_youtubers,
         index=0,
     )
 
-    # Find that YouTuber in the analyzed data
     yt_record = next(
         (y for y in analyzed_data["youtubers"] if y["name"] == chosen_yt),
         None,
@@ -611,26 +592,24 @@ with tab4:
 
     if yt_record:
         summary = yt_record.get("summary", {})
-        subs = yt_record.get("subscriber_count", 0)
+        subs  = yt_record.get("subscriber_count", 0)
         views = yt_record.get("view_count", 0)
-        n_videos = summary.get("total_videos_analyzed", 0)
+        n_videos      = summary.get("total_videos_analyzed", 0)
         n_transcripts = summary.get("videos_with_transcript", 0)
 
-        # Stats row
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Subscribers",
+        c1.metric("구독자",
                   f"{subs / 1_000_000:.1f}M" if subs >= 1_000_000 else f"{subs / 1_000:.0f}K")
-        c2.metric("Total Views",
+        c2.metric("총 조회수",
                   f"{views / 1_000_000_000:.1f}B" if views >= 1_000_000_000
                   else f"{views / 1_000_000:.1f}M")
-        c3.metric("Videos Analyzed", n_videos)
-        c4.metric("With Transcript", n_transcripts)
+        c3.metric("분석 영상", n_videos)
+        c4.metric("자막 있는 영상", n_transcripts)
 
         col_a2, col_b2, col_c2 = st.columns(3)
 
-        # Top brands for this YouTuber
         with col_a2:
-            st.markdown('<p class="section-header">🏷️ Top Brands</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-header">🏷️ 주요 브랜드</p>', unsafe_allow_html=True)
             top_brands_yt = summary.get("top_brands", [])[:10]
             if top_brands_yt:
                 df_top_yt = pd.DataFrame(top_brands_yt, columns=["brand", "count"])
@@ -639,7 +618,7 @@ with tab4:
                     orientation="h",
                     color="count",
                     color_continuous_scale="RdPu",
-                    labels={"count": "Mentions", "brand": ""},
+                    labels={"count": "언급 수", "brand": ""},
                 )
                 fig_ytb.update_layout(
                     height=320,
@@ -649,11 +628,10 @@ with tab4:
                 )
                 st.plotly_chart(fig_ytb, use_container_width=True)
             else:
-                st.info("No brand data.")
+                st.info("브랜드 데이터가 없습니다.")
 
-        # Category distribution for this YouTuber
         with col_b2:
-            st.markdown('<p class="section-header">📂 Categories</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-header">📂 카테고리</p>', unsafe_allow_html=True)
             top_cats_yt = summary.get("top_categories", [])[:8]
             if top_cats_yt:
                 df_cat_yt = pd.DataFrame(top_cats_yt, columns=["category", "count"])
@@ -670,11 +648,10 @@ with tab4:
                 )
                 st.plotly_chart(fig_ytc, use_container_width=True)
             else:
-                st.info("No category data.")
+                st.info("카테고리 데이터가 없습니다.")
 
-        # Brand sentiment for this YouTuber
         with col_c2:
-            st.markdown('<p class="section-header">😊 Brand Sentiment</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-header">😊 브랜드 감성</p>', unsafe_allow_html=True)
             brand_sents_yt = summary.get("brand_sentiments", [])[:8]
             if brand_sents_yt:
                 df_sent_yt = pd.DataFrame(brand_sents_yt)
@@ -694,43 +671,42 @@ with tab4:
                 )
                 st.plotly_chart(fig_yts, use_container_width=True)
             else:
-                st.info("No sentiment data.")
+                st.info("감성 데이터가 없습니다.")
 
-        # Recent videos table
-        st.markdown('<p class="section-header">🎬 Recent Videos</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-header">🎬 최근 영상</p>', unsafe_allow_html=True)
         videos_data = []
         for v in yt_record.get("videos", []):
             analysis = v.get("analysis", {})
             brands_detected = ", ".join(analysis.get("brands", [])[:5])
             overall_sent = analysis.get("overall_sentiment", {})
+            label_ko = SENTIMENT_KO.get(overall_sent.get("label", ""), "—")
             videos_data.append({
-                "Title": v.get("title", "")[:60],
-                "Published": v.get("published_at", "")[:10],
-                "Brands Detected": brands_detected or "—",
-                "Sentiment": overall_sent.get("label", "—"),
-                "Score": round(overall_sent.get("polarity", 0), 2),
-                "Has Transcript": "✅" if v.get("transcript") else "❌",
+                "제목": v.get("title", "")[:60],
+                "게시일": v.get("published_at", "")[:10],
+                "감지된 브랜드": brands_detected or "—",
+                "감성": label_ko,
+                "점수": round(overall_sent.get("polarity", 0), 2),
+                "자막": "✅" if v.get("transcript") else "❌",
             })
         if videos_data:
             st.dataframe(pd.DataFrame(videos_data), use_container_width=True, hide_index=True)
 
-    # All YouTubers comparison
     st.divider()
-    st.markdown('<p class="section-header">📊 All YouTubers Comparison</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">📊 유튜버 전체 비교</p>', unsafe_allow_html=True)
     if not df_youtubers.empty:
         fig_compare = make_subplots(
             rows=1, cols=2,
-            subplot_titles=("Videos Analyzed", "Videos with Transcript"),
+            subplot_titles=("분석 영상 수", "자막 있는 영상 수"),
         )
         yt_sorted = df_youtubers.sort_values("videos_analyzed", ascending=True)
         fig_compare.add_trace(
             go.Bar(y=yt_sorted["youtuber"], x=yt_sorted["videos_analyzed"],
-                   orientation="h", marker_color="#F48FB1", name="Videos"),
+                   orientation="h", marker_color="#F48FB1", name="영상"),
             row=1, col=1,
         )
         fig_compare.add_trace(
             go.Bar(y=yt_sorted["youtuber"], x=yt_sorted["videos_with_transcript"],
-                   orientation="h", marker_color="#CE93D8", name="With Transcript"),
+                   orientation="h", marker_color="#CE93D8", name="자막"),
             row=1, col=2,
         )
         fig_compare.update_layout(
@@ -742,14 +718,14 @@ with tab4:
 
 
 # ──────────────────────────────────────────────
-# Footer
+# 푸터
 # ──────────────────────────────────────────────
 st.divider()
 st.markdown(
     "<p style='text-align:center;color:#aaa;font-size:0.8rem;'>"
-    "💄 Beauty Influencer Cosmetics Analytics Dashboard · "
-    "Built with Streamlit & Plotly · "
-    "Data: YouTube beauty channel analysis"
+    "💄 뷰티 인플루언서 화장품 분석 대시보드 · "
+    "Streamlit &amp; Plotly 기반 · "
+    "데이터: 유튜브 뷰티 채널 분석 결과"
     "</p>",
     unsafe_allow_html=True,
 )
