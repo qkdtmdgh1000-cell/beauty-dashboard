@@ -78,6 +78,17 @@ st.markdown("""
         color: #555 !important;
         font-weight: 500;
     }
+    /* 전체 선택/해제 버튼 */
+    div[data-testid="stSidebarContent"] button[kind="secondary"] {
+        background-color: #fce4ec !important;
+        border: 1px solid #F48FB1 !important;
+        color: #880E4F !important;
+        font-size: 0.78rem !important;
+        padding: 2px 6px !important;
+    }
+    div[data-testid="stSidebarContent"] button[kind="secondary"]:hover {
+        background-color: #F8BBD9 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -122,6 +133,10 @@ dfs = load_csvs()
 all_youtubers = sorted(dfs["brands"]["youtuber"].unique().tolist())
 all_brands    = sorted(dfs["brands"]["brand"].unique().tolist())
 
+# 세션 상태 초기화
+if "youtuber_multiselect" not in st.session_state:
+    st.session_state["youtuber_multiselect"] = all_youtubers
+
 # ──────────────────────────────────────────────
 # 사이드바 필터
 # ──────────────────────────────────────────────
@@ -130,10 +145,18 @@ with st.sidebar:
     st.markdown("---")
 
     with st.expander("👤 유튜버", expanded=False):
+        btn_col1, btn_col2 = st.columns(2)
+        with btn_col1:
+            if st.button("전체 선택", use_container_width=True, key="btn_select_all"):
+                st.session_state["youtuber_multiselect"] = all_youtubers
+        with btn_col2:
+            if st.button("전체 해제", use_container_width=True, key="btn_deselect_all"):
+                st.session_state["youtuber_multiselect"] = []
+
         selected_youtubers = st.multiselect(
             "포함할 유튜버 선택",
             options=all_youtubers,
-            default=all_youtubers,
+            key="youtuber_multiselect",
             help="비워두면 전체 포함",
             label_visibility="collapsed",
         )
